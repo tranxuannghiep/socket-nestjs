@@ -1,21 +1,22 @@
 import { Avatar, Typography } from "antd";
+import { format } from "date-fns";
 import styled from "styled-components";
 
 const WrapperStyled = styled.div`
-  margin-bottom: 10px;
   .author {
     margin-left: 5px;
     font-weight: bold;
   }
 
   .date {
-    margin-left: 10px;
     font-size: 11px;
     color: #a7a7a7;
   }
 
   .content {
     margin-left: 30px;
+    margin-top: 10px;
+    display: inline-block;
     background-color: #e4e6eb;
     padding: 8px 12px;
     line-height: 20px;
@@ -25,29 +26,42 @@ const WrapperStyled = styled.div`
 `;
 
 export interface MessageProps {
-  userId?: string | number;
+  id: number;
   text: string;
-  displayName: string;
-  createAt: string;
-  photoUrl: string | null;
+  createdAt: string;
+  user: {
+    id: number;
+    firstname: string;
+    lastname: string;
+    image: string | null;
+  };
+  hiddenInfo: boolean;
+  hiddenDate: boolean;
 }
 
 export default function Message({
   text,
-  displayName,
-  createAt,
-  photoUrl,
+  createdAt,
+  user,
+  hiddenInfo,
+  hiddenDate,
 }: MessageProps) {
   return (
     <WrapperStyled>
-      <div>
-        <Avatar size="small" src={photoUrl}>
+      <div style={{ textAlign: "center" }} hidden={hiddenDate}>
+        <Typography.Text className="date">
+          {format(new Date(createdAt), "HH:mm, dd MMM yyyy")}
+        </Typography.Text>
+      </div>
+      <div hidden={hiddenInfo}>
+        <Avatar size="small" src={user.image}>
           A
         </Avatar>
-        <Typography.Text className="author">{displayName}</Typography.Text>
-        <Typography.Text className="date">{createAt}</Typography.Text>
+        <Typography.Text className="author">
+          {user.firstname + " " + user.lastname}
+        </Typography.Text>
       </div>
-      <div style={{ marginTop: 10 }}>
+      <div>
         <Typography.Text className="content">{text}</Typography.Text>
       </div>
     </WrapperStyled>

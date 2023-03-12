@@ -1,16 +1,5 @@
-import { Col, Row } from "antd";
-import ChatWindow from "../components/ChatWindow";
-import SideBar from "../components/SideBar";
+import { Outlet } from "react-router-dom";
 
 export default function ChatPage() {
-  return (
-    <Row>
-      <Col span={6}>
-        <SideBar />
-      </Col>
-      <Col span={18}>
-        <ChatWindow />
-      </Col>
-    </Row>
-  );
+  return <Outlet />;
 }

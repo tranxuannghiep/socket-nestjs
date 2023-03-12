@@ -1,6 +1,8 @@
 import { UserAddOutlined } from "@ant-design/icons";
 import { Avatar, Button, Form, Input, Tooltip } from "antd";
-import { useEffect, useState } from "react";
+import { differenceInMinutes, parseISO } from "date-fns";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useParams } from "react-router-dom";
 import io from "socket.io-client";
 import styled from "styled-components";
 import Message, { MessageProps } from "./Message";
@@ -10,16 +12,6 @@ const access_token = localStorage.getItem("access_token") || "";
 const userId = localStorage.getItem("userId") || "";
 
 const SOCKET_URL = "http://localhost:5000";
-const socket = io(SOCKET_URL, {
-  query: {
-    displayName: "Nguyen Van An",
-    photoUrl:
-      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSOElPZMl3h8mw0lNb6REcmFn_eMfv5BAfv9Q&usqp=CAU",
-  },
-  extraHeaders: {
-    token: access_token,
-  },
-});
 
 const WrapperStyled = styled.div`
   height: 100vh;
@@ -65,7 +57,19 @@ const ContentStyled = styled.div`
 `;
 const MessageListStyled = styled.div`
   max-height: 100%;
-  overflow-y: auto;
+  overflow-y: scroll;
+  &::-webkit-scrollbar {
+    width: 10px; /* độ rộng của thanh cuộn */
+    height: 10px; /* chiều cao của thanh cuộn */
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: #ccc;
+    border-radius: 10px; /* bo tròn viền của thanh cuộn */
+  }
+  &::-webkit-scrollbar-track {
+    background-color: transparent;
+    border-radius: 10px; /* bo tròn viền của vùng bị chiếm bởi thanh cuộn */
+  }
 `;
 
 const FormStyled = styled(Form)`
@@ -84,33 +88,54 @@ const FormStyled = styled(Form)`
 
 export default function ChatWindow() {
   const [message, setMessage] = useState("");
+  const refListMessage = useRef<HTMLDivElement>(null);
   const [allMessages, setAllMessages] = useState<MessageProps[]>([]);
 
+  const { roomId } = useParams();
+
+  const socket = useMemo(() => {
+    return io(SOCKET_URL, {
+      query: {
+        roomId: roomId,
+      },
+      extraHeaders: {
+        token: access_token,
+      },
+    });
+  }, [roomId]);
+
   useEffect(() => {
-    socket.on("connect", () => {
-      console.log("Connected to server");
-    });
+    if (refListMessage.current) {
+      refListMessage.current.scrollTop = refListMessage.current.scrollHeight;
+    }
+  }, [allMessages]);
 
-    socket.on("disconnect", () => {
-      console.log("Disconnected from server");
-      socket.disconnect();
-    });
+  useEffect(() => {
+    if (socket) {
+      socket.on("connect", () => {
+        console.log("Connected to server");
+      });
 
-    // server gủi sự kiện getAll message => thường là lúc bắt đầu vào
-    socket.on("allMessages", (data) => {
-      setAllMessages(data);
-    });
+      // server gủi sự kiện getAll message => thường là lúc bắt đầu vào
+      socket.on("allMessages", (data) => {
+        setAllMessages(data);
+      });
 
-    // server gửi sự kiện newMessage
-    socket.on("newMessage", (message) => {
-      setAllMessages((prevMessages) => [...prevMessages, message]);
-    });
+      // server gửi sự kiện newMessage
+      socket.on("newMessage", (message) => {
+        setAllMessages((prevMessages) => [...prevMessages, message]);
+      });
+    }
 
-    // server reply riêng
-    socket.on("reply", (message) => {
-      console.log(message);
-    });
-  }, []);
+    return () => {
+      if (socket) {
+        socket.off("connect");
+        socket.off("allMessages");
+        socket.off("newMessage");
+        socket.disconnect();
+      }
+    };
+  }, [socket]);
 
   const handleSend = () => {
     socket.emit("message", message);
@@ -145,18 +170,39 @@ export default function ChatWindow() {
         </ButtonGroupStyled>
       </HeaderStyled>
       <ContentStyled>
-        <MessageListStyled>
+        <MessageListStyled ref={refListMessage}>
           {allMessages.map((data, idx) =>
-            data.userId?.toString() !== userId ? (
+            data.user.id.toString() !== userId ? (
               <Message
-                key={idx}
+                key={data.id}
+                id={data.id}
                 text={data.text}
-                photoUrl={data.photoUrl || null}
-                displayName={data.displayName}
-                createAt={data.createAt}
+                user={data.user}
+                createdAt={data.createdAt}
+                hiddenInfo={
+                  idx > 0 && data.user.id === allMessages[idx - 1].user.id
+                }
+                hiddenDate={
+                  idx > 0 &&
+                  differenceInMinutes(
+                    parseISO(allMessages[idx].createdAt),
+                    parseISO(allMessages[idx - 1].createdAt)
+                  ) < 5
+                }
               />
             ) : (
-              <YourMessage text={data.text} />
+              <YourMessage
+                key={data.id}
+                text={data.text}
+                createdAt={data.createdAt}
+                hiddenDate={
+                  idx > 0 &&
+                  differenceInMinutes(
+                    parseISO(allMessages[idx].createdAt),
+                    parseISO(allMessages[idx - 1].createdAt)
+                  ) < 5
+                }
+              />
             )
           )}
         </MessageListStyled>
