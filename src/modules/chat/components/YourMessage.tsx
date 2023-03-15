@@ -1,4 +1,4 @@
-import { Typography } from "antd";
+import { Image, Typography } from "antd";
 import { format } from "date-fns";
 import styled from "styled-components";
 
@@ -6,6 +6,7 @@ export interface YourMessageProps {
   text: string;
   hiddenDate: boolean;
   createdAt: string;
+  type: string;
 }
 
 const WrapperStyled = styled.div`
@@ -18,13 +19,13 @@ const WrapperStyled = styled.div`
     display: flex;
     justify-content: flex-end;
     margin-bottom: 10px;
+    margin-right: 10px;
     .content {
       background-color: #0084ff;
       padding: 8px 12px;
       line-height: 20px;
       border-radius: 20px;
       color: #fff;
-      margin-right: 10px;
     }
   }
 `;
@@ -33,6 +34,7 @@ export default function YourMessage({
   text,
   hiddenDate,
   createdAt,
+  type,
 }: YourMessageProps) {
   return (
     <WrapperStyled>
@@ -42,7 +44,11 @@ export default function YourMessage({
         </Typography.Text>
       </div>
       <div className="content-text">
-        <Typography.Text className="content">{text}</Typography.Text>
+        {type === "image" ? (
+          <Image width={200} src={text} />
+        ) : (
+          <Typography.Text className="content">{text}</Typography.Text>
+        )}
       </div>
     </WrapperStyled>
   );

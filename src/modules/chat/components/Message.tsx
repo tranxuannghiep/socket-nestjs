@@ -1,4 +1,4 @@
-import { Avatar, Typography } from "antd";
+import { Avatar, Image, Typography } from "antd";
 import { format } from "date-fns";
 import styled from "styled-components";
 
@@ -16,15 +16,17 @@ const WrapperStyled = styled.div`
     color: #a7a7a7;
   }
 
-  .content {
+  .content-text {
     margin-left: 30px;
     margin-top: 10px;
-    display: inline-block;
-    background-color: #e4e6eb;
-    padding: 8px 12px;
-    line-height: 20px;
-    border-radius: 18px;
-    max-width: 300px;
+    .content {
+      display: inline-block;
+      background-color: #e4e6eb;
+      padding: 8px 12px;
+      line-height: 20px;
+      border-radius: 18px;
+      max-width: 300px;
+    }
   }
 `;
 
@@ -40,6 +42,7 @@ export interface MessageProps {
   };
   hiddenInfo: boolean;
   hiddenDate: boolean;
+  type: string;
 }
 
 export default function Message({
@@ -48,6 +51,7 @@ export default function Message({
   user,
   hiddenInfo,
   hiddenDate,
+  type,
 }: MessageProps) {
   return (
     <WrapperStyled>
@@ -64,8 +68,12 @@ export default function Message({
           {user.firstname + " " + user.lastname}
         </Typography.Text>
       </div>
-      <div>
-        <Typography.Text className="content">{text}</Typography.Text>
+      <div className="content-text">
+        {type === "image" ? (
+          <Image width={200} src={text} />
+        ) : (
+          <Typography.Text className="content">{text}</Typography.Text>
+        )}
       </div>
     </WrapperStyled>
   );

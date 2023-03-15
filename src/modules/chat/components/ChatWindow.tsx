@@ -1,10 +1,11 @@
-import { UserAddOutlined } from "@ant-design/icons";
+import { PictureOutlined, UserAddOutlined } from "@ant-design/icons";
 import { Avatar, Button, Form, Input, Tooltip } from "antd";
 import { differenceInMinutes, parseISO } from "date-fns";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import io from "socket.io-client";
 import styled from "styled-components";
+import { uploadFile } from "../../../aws/s3Client";
 import Message, { MessageProps } from "./Message";
 import YourMessage from "./YourMessage";
 
@@ -85,6 +86,13 @@ const FormStyled = styled(Form)`
   }
 `;
 
+const SendData = styled(PictureOutlined)`
+  cursor: pointer;
+  font-size: 24px;
+  padding: 0 12px;
+  border-right: 1px solid #ccc;
+`;
+
 export default function ChatWindow() {
   const [message, setMessage] = useState("");
   const refListMessage = useRef<HTMLDivElement>(null);
@@ -136,7 +144,7 @@ export default function ChatWindow() {
   }, [socket]);
 
   const handleSend = () => {
-    socket.emit("message", message);
+    socket.emit("message", { text: message, type: "text" });
     setMessage("");
   };
 
@@ -177,6 +185,7 @@ export default function ChatWindow() {
                 text={data.text}
                 user={data.user}
                 createdAt={data.createdAt}
+                type={data.type}
                 hiddenInfo={
                   idx > 0 && data.user.id === allMessages[idx - 1].user.id
                 }
@@ -193,6 +202,7 @@ export default function ChatWindow() {
                 key={data.id}
                 text={data.text}
                 createdAt={data.createdAt}
+                type={data.type}
                 hiddenDate={
                   idx > 0 &&
                   differenceInMinutes(
@@ -205,6 +215,22 @@ export default function ChatWindow() {
           )}
         </MessageListStyled>
         <FormStyled>
+          <label htmlFor="icon-button-file">
+            <input
+              id="icon-button-file"
+              type="file"
+              accept="image/*"
+              style={{ display: "none" }}
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  const res = await uploadFile(file);
+                  socket.emit("message", { text: res.Location, type: "image" });
+                }
+              }}
+            />
+            <SendData />
+          </label>
           <Form.Item>
             <Input
               value={message}
