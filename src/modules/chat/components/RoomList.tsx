@@ -35,12 +35,8 @@ export default function RoomList() {
   const [listRoom, setListRoom] = useState<any[]>([]);
 
   const getListRoom = useCallback(async () => {
-    const token = localStorage.getItem("access_token") || "";
-
     const res = await axios.get("http://localhost:5000/room/all", {
-      headers: {
-        Authorization: "Bearer " + token,
-      },
+      withCredentials: true,
     });
 
     setListRoom(res.data);

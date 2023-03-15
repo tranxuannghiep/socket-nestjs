@@ -8,7 +8,6 @@ import styled from "styled-components";
 import Message, { MessageProps } from "./Message";
 import YourMessage from "./YourMessage";
 
-const access_token = localStorage.getItem("access_token") || "";
 const userId = localStorage.getItem("userId") || "";
 
 const SOCKET_URL = "http://localhost:5000";
@@ -95,12 +94,11 @@ export default function ChatWindow() {
 
   const socket = useMemo(() => {
     return io(SOCKET_URL, {
+      transports: ["websocket"],
       query: {
         roomId: roomId,
       },
-      extraHeaders: {
-        token: access_token,
-      },
+      withCredentials: true,
     });
   }, [roomId]);
 

@@ -3,6 +3,9 @@ import { format } from "date-fns";
 import styled from "styled-components";
 
 const WrapperStyled = styled.div`
+  &:last-child {
+    margin-bottom: 10px;
+  }
   .author {
     margin-left: 5px;
     font-weight: bold;

@@ -6,7 +6,9 @@ export default function LoginPage() {
   const navigate = useNavigate();
 
   const onFinish = async (values: any) => {
-    const res = await axios.post("http://localhost:5000/auth/login", values);
+    const res = await axios.post("http://localhost:5000/auth/login", values, {
+      withCredentials: true,
+    });
     if (res.status === 201) {
       localStorage.setItem("access_token", res.data.access_token);
       localStorage.setItem("userId", res.data.id);
