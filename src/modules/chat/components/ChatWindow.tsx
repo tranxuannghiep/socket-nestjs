@@ -1,13 +1,14 @@
 import { PictureOutlined, UserAddOutlined } from "@ant-design/icons";
 import { Avatar, Button, Form, Input, Tooltip } from "antd";
+import axios from "axios";
 import { differenceInMinutes, parseISO } from "date-fns";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import io from "socket.io-client";
 import styled from "styled-components";
-import { uploadFile } from "../../../aws/s3Client";
 import Message, { MessageProps } from "./Message";
 import YourMessage from "./YourMessage";
+import path from "path-browserify";
 
 const userId = localStorage.getItem("userId") || "";
 
@@ -224,8 +225,30 @@ export default function ChatWindow() {
               onChange={async (e) => {
                 const file = e.target.files?.[0];
                 if (file) {
-                  const res = await uploadFile(file);
-                  socket.emit("message", { text: res.Location, type: "image" });
+                  const res = await axios.post("http://localhost:5000/upload", {
+                    bucket: process.env.REACT_APP_AWS_PUBLIC_BUCKET_NAME,
+                    key: "image-" + Date.now() + path.extname(file.name),
+                    contentType: file.type,
+                  });
+                  const { url, fields } = res.data;
+                  const formData = new FormData();
+                  for (const [name, value] of Object.entries(fields)) {
+                    formData.append(name, value as any);
+                  }
+                  formData.append("file", file);
+                  try {
+                    await axios.post(url, formData, {
+                      headers: {
+                        "Content-Type": "multipart/form-data",
+                      },
+                    });
+                    socket.emit("message", {
+                      text: `https://learn-nestjs.s3.ap-northeast-1.amazonaws.com/${fields.key}`,
+                      type: "image",
+                    });
+                  } catch (error) {
+                    console.log(error);
+                  }
                 }
               }}
             />
