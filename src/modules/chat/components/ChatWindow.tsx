@@ -9,6 +9,7 @@ import styled from "styled-components";
 import Message, { MessageProps } from "./Message";
 import YourMessage from "./YourMessage";
 import path from "path-browserify";
+import { PreviewFile } from "./PreviewFile";
 
 const userId = localStorage.getItem("userId") || "";
 
@@ -94,10 +95,18 @@ const SendData = styled(PictureOutlined)`
   border-right: 1px solid #ccc;
 `;
 
+export interface FileInterface {
+  file: File;
+  type: string;
+  file_name: string;
+}
+
 export default function ChatWindow() {
   const [message, setMessage] = useState("");
   const refListMessage = useRef<HTMLDivElement>(null);
   const [allMessages, setAllMessages] = useState<MessageProps[]>([]);
+
+  const [listFile, setListFile] = useState<FileInterface[]>([]);
 
   const { roomId } = useParams();
 
@@ -217,45 +226,56 @@ export default function ChatWindow() {
             )
           )}
         </MessageListStyled>
+        <PreviewFile listFile={listFile} />
         <FormStyled>
           <label htmlFor="icon-button-file">
             <input
               id="icon-button-file"
               type="file"
+              multiple
               style={{ display: "none" }}
               onChange={async (e) => {
-                const file = e.target.files?.[0];
-
-                if (file) {
-                  const res = await axios.post("http://localhost:5000/upload", {
-                    bucket: process.env.REACT_APP_AWS_PUBLIC_BUCKET_NAME,
-                    key:
-                      path.parse(file.name).name +
-                      Date.now() +
-                      path.extname(file.name),
-                    contentType: file.type,
-                  });
-                  const { url, fields } = res.data;
-                  const formData = new FormData();
-                  for (const [name, value] of Object.entries(fields)) {
-                    formData.append(name, value as any);
-                  }
-                  formData.append("file", file);
-                  try {
-                    await axios.post(url, formData, {
-                      headers: {
-                        "Content-Type": "multipart/form-data",
-                      },
-                    });
-                    socket.emit("message", {
-                      text: `https://learn-nestjs.s3.ap-northeast-1.amazonaws.com/${fields.key}`,
-                      type: file.type,
-                      file_name: file.name,
-                    });
-                  } catch (error) {
-                    console.log(error);
-                  }
+                // const file = e.target.files?.[0];
+                console.log(e.target.files);
+                const files = e.target.files;
+                if (files) {
+                  const newFiles = Array.from(files).map((file) => ({
+                    file: file,
+                    type: file.type,
+                    file_name: file.name,
+                  }));
+                  setListFile(newFiles);
                 }
+                // if (file) {
+                //   const res = await axios.post("http://localhost:5000/upload", {
+                //     bucket: process.env.REACT_APP_AWS_PUBLIC_BUCKET_NAME,
+                //     key:
+                //       path.parse(file.name).name +
+                //       Date.now() +
+                //       path.extname(file.name),
+                //     contentType: file.type,
+                //   });
+                //   const { url, fields } = res.data;
+                //   const formData = new FormData();
+                //   for (const [name, value] of Object.entries(fields)) {
+                //     formData.append(name, value as any);
+                //   }
+                //   formData.append("file", file);
+                //   try {
+                //     await axios.post(url, formData, {
+                //       headers: {
+                //         "Content-Type": "multipart/form-data",
+                //       },
+                //     });
+                //     socket.emit("message", {
+                //       text: `https://learn-nestjs.s3.ap-northeast-1.amazonaws.com/${fields.key}`,
+                //       type: file.type,
+                //       file_name: file.name,
+                //     });
+                //   } catch (error) {
+                //     console.log(error);
+                //   }
+                // }
               }}
             />
             <SendData />
