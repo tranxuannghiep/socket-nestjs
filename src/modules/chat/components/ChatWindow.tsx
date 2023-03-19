@@ -145,7 +145,7 @@ export default function ChatWindow() {
   }, [socket]);
 
   const handleSend = () => {
-    socket.emit("message", { text: message, type: "text" });
+    socket.emit("message", { text: message });
     setMessage("");
   };
 
@@ -187,6 +187,7 @@ export default function ChatWindow() {
                 user={data.user}
                 createdAt={data.createdAt}
                 type={data.type}
+                file_name={data.file_name}
                 hiddenInfo={
                   idx > 0 && data.user.id === allMessages[idx - 1].user.id
                 }
@@ -204,6 +205,7 @@ export default function ChatWindow() {
                 text={data.text}
                 createdAt={data.createdAt}
                 type={data.type}
+                file_name={data.file_name}
                 hiddenDate={
                   idx > 0 &&
                   differenceInMinutes(
@@ -220,14 +222,17 @@ export default function ChatWindow() {
             <input
               id="icon-button-file"
               type="file"
-              accept="image/*"
               style={{ display: "none" }}
               onChange={async (e) => {
                 const file = e.target.files?.[0];
+
                 if (file) {
                   const res = await axios.post("http://localhost:5000/upload", {
                     bucket: process.env.REACT_APP_AWS_PUBLIC_BUCKET_NAME,
-                    key: "image-" + Date.now() + path.extname(file.name),
+                    key:
+                      path.parse(file.name).name +
+                      Date.now() +
+                      path.extname(file.name),
                     contentType: file.type,
                   });
                   const { url, fields } = res.data;
@@ -244,7 +249,8 @@ export default function ChatWindow() {
                     });
                     socket.emit("message", {
                       text: `https://learn-nestjs.s3.ap-northeast-1.amazonaws.com/${fields.key}`,
-                      type: "image",
+                      type: file.type,
+                      file_name: file.name,
                     });
                   } catch (error) {
                     console.log(error);

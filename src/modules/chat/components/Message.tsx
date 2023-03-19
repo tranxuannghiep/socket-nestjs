@@ -1,6 +1,7 @@
-import { Avatar, Image, Typography } from "antd";
+import { Avatar, Typography } from "antd";
 import { format } from "date-fns";
 import styled from "styled-components";
+import { FileRender } from "./FileRender";
 
 const WrapperStyled = styled.div`
   &:last-child {
@@ -19,6 +20,22 @@ const WrapperStyled = styled.div`
   .content-text {
     margin-left: 30px;
     margin-top: 10px;
+    .file-icon {
+      width: fit-content;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      background: #e4e6eb;
+      padding: 10px 20px;
+      border-radius: 20px;
+      svg {
+        width: 24px;
+      }
+      .file-name {
+        margin-left: 10px;
+        font-weight: 500;
+      }
+    }
     .content {
       display: inline-block;
       background-color: #e4e6eb;
@@ -42,7 +59,8 @@ export interface MessageProps {
   };
   hiddenInfo: boolean;
   hiddenDate: boolean;
-  type: string;
+  type?: string;
+  file_name?: string;
 }
 
 export default function Message({
@@ -52,6 +70,7 @@ export default function Message({
   hiddenInfo,
   hiddenDate,
   type,
+  file_name,
 }: MessageProps) {
   return (
     <WrapperStyled>
@@ -69,11 +88,7 @@ export default function Message({
         </Typography.Text>
       </div>
       <div className="content-text">
-        {type === "image" ? (
-          <Image width={200} src={text} />
-        ) : (
-          <Typography.Text className="content">{text}</Typography.Text>
-        )}
+        <FileRender text={text} type={type} file_name={file_name} />
       </div>
     </WrapperStyled>
   );
