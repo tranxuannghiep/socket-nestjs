@@ -10,6 +10,7 @@ import Message, { MessageProps } from "./Message";
 import YourMessage from "./YourMessage";
 import path from "path-browserify";
 import { PreviewFile } from "./PreviewFile";
+import { v4 as uuidv4 } from "uuid";
 
 const userId = localStorage.getItem("userId") || "";
 
@@ -96,6 +97,7 @@ const SendData = styled(PictureOutlined)`
 `;
 
 export interface FileInterface {
+  id: string;
   file: File;
   type: string;
   file_name: string;
@@ -226,7 +228,7 @@ export default function ChatWindow() {
             )
           )}
         </MessageListStyled>
-        <PreviewFile listFile={listFile} />
+        <PreviewFile listFile={listFile} setListFile={setListFile} />
         <FormStyled>
           <label htmlFor="icon-button-file">
             <input
@@ -240,6 +242,7 @@ export default function ChatWindow() {
                 const files = e.target.files;
                 if (files) {
                   const newFiles = Array.from(files).map((file) => ({
+                    id: uuidv4(),
                     file: file,
                     type: file.type,
                     file_name: file.name,

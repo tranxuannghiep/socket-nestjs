@@ -5,6 +5,7 @@ import { FileInterface } from "./ChatWindow";
 
 export interface PreviewFileProps {
   listFile: FileInterface[];
+  setListFile: React.Dispatch<React.SetStateAction<FileInterface[]>>;
 }
 
 const PreviewStyled = styled.div`
@@ -25,17 +26,21 @@ const PreviewStyled = styled.div`
   }
 `;
 
-export function PreviewFile({ listFile }: PreviewFileProps) {
+export function PreviewFile({ listFile, setListFile }: PreviewFileProps) {
+  const handleRemoveFile = (id: string) => {
+    const idx = listFile.findIndex((val) => val.id === id);
+    setListFile([...listFile.slice(0, idx), ...listFile.slice(idx + 1)]);
+  };
   return (
     <PreviewStyled>
       {listFile.map((val) => (
-        <div className="file">
+        <div className="file" key={val.id}>
           <img
             width={60}
             src={URL.createObjectURL(val.file)}
             alt={val.file_name}
           />
-          <div className="close">
+          <div className="close" onClick={() => handleRemoveFile(val.id)}>
             <CloseOutlined style={{ fontSize: 15, color: "#fff" }} />
           </div>
         </div>
