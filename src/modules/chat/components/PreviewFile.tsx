@@ -2,6 +2,7 @@ import { CloseOutlined } from "@ant-design/icons";
 import * as React from "react";
 import styled from "styled-components";
 import { FileInterface } from "./ChatWindow";
+import { RenderPreviewFile } from "./RenderPreviewFile";
 
 export interface PreviewFileProps {
   listFile: FileInterface[];
@@ -10,18 +11,24 @@ export interface PreviewFileProps {
 
 const PreviewStyled = styled.div`
   display: flex;
+  overflow-x: auto;
+  padding-top: 15px;
   .file {
     margin-right: 15px;
-    border: 1px solid #ccc;
     position: relative;
     .close {
       position: absolute;
-      top: -10px;
-      right: -10px;
+      top: -6px;
+      right: -6px;
       cursor: pointer;
       background: #3e4042;
       border-radius: 50%;
       padding: 4px;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
   }
 `;
@@ -35,13 +42,13 @@ export function PreviewFile({ listFile, setListFile }: PreviewFileProps) {
     <PreviewStyled>
       {listFile.map((val) => (
         <div className="file" key={val.id}>
-          <img
-            width={60}
-            src={URL.createObjectURL(val.file)}
-            alt={val.file_name}
+          <RenderPreviewFile
+            file={val.file}
+            type={val.type}
+            file_name={val.file_name}
           />
           <div className="close" onClick={() => handleRemoveFile(val.id)}>
-            <CloseOutlined style={{ fontSize: 15, color: "#fff" }} />
+            <CloseOutlined style={{ fontSize: 12, color: "#fff" }} />
           </div>
         </div>
       ))}

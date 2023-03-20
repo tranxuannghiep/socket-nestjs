@@ -79,9 +79,46 @@ const FormStyled = styled(Form)`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 2px 2px 2px 0;
+  padding: 12px;
   border: 1px solid rgb(230, 230, 230);
   border-radius: 2px;
+  margin-top: 10px;
+  border-radius: 15px;
+
+  &.send-file-list {
+    flex-direction: column;
+    align-items: flex-start;
+    .wrapped-file-list {
+      display: flex;
+      align-items: center;
+      margin: 0 0 12px 12px;
+      overflow: hidden;
+      width: 100%;
+      label {
+        margin-top: 15px;
+        margin-right: 10px;
+        border: 1px solid #ccc;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 60px;
+        height: 60px;
+        .icon-file {
+          font-size: 40px;
+          border-right: none;
+          padding: 12px;
+        }
+      }
+    }
+  }
+
+  .send-message {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
 
   .ant-form-item {
     flex: 1;
@@ -92,7 +129,7 @@ const FormStyled = styled(Form)`
 const SendData = styled(PictureOutlined)`
   cursor: pointer;
   font-size: 24px;
-  padding: 0 12px;
+  padding-right: 12px;
   border-right: 1px solid #ccc;
 `;
 
@@ -155,9 +192,44 @@ export default function ChatWindow() {
     };
   }, [socket]);
 
-  const handleSend = () => {
-    socket.emit("message", { text: message });
+  const handleSend = async () => {
+    if (message) {
+      socket.emit("message", { text: message });
+    }
+    if (listFile.length) {
+      for (const data of listFile) {
+        const res = await axios.post("http://localhost:5000/upload", {
+          bucket: process.env.REACT_APP_AWS_PUBLIC_BUCKET_NAME,
+          key:
+            path.parse(data.file_name).name +
+            Date.now() +
+            path.extname(data.file_name),
+          contentType: data.type,
+        });
+        const { url, fields } = res.data;
+        const formData = new FormData();
+        for (const [name, value] of Object.entries(fields)) {
+          formData.append(name, value as any);
+        }
+        formData.append("file", data.file);
+        try {
+          await axios.post(url, formData, {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          });
+          socket.emit("message", {
+            text: `https://learn-nestjs.s3.ap-northeast-1.amazonaws.com/${fields.key}`,
+            type: data.type,
+            file_name: data.file_name,
+          });
+        } catch (error) {
+          console.log(error);
+        }
+      }
+    }
     setMessage("");
+    setListFile([])
   };
 
   return (
@@ -228,76 +300,53 @@ export default function ChatWindow() {
             )
           )}
         </MessageListStyled>
-        <PreviewFile listFile={listFile} setListFile={setListFile} />
-        <FormStyled>
-          <label htmlFor="icon-button-file">
-            <input
-              id="icon-button-file"
-              type="file"
-              multiple
-              style={{ display: "none" }}
-              onChange={async (e) => {
-                // const file = e.target.files?.[0];
-                console.log(e.target.files);
-                const files = e.target.files;
-                if (files) {
-                  const newFiles = Array.from(files).map((file) => ({
-                    id: uuidv4(),
-                    file: file,
-                    type: file.type,
-                    file_name: file.name,
-                  }));
-                  setListFile(newFiles);
-                }
-                // if (file) {
-                //   const res = await axios.post("http://localhost:5000/upload", {
-                //     bucket: process.env.REACT_APP_AWS_PUBLIC_BUCKET_NAME,
-                //     key:
-                //       path.parse(file.name).name +
-                //       Date.now() +
-                //       path.extname(file.name),
-                //     contentType: file.type,
-                //   });
-                //   const { url, fields } = res.data;
-                //   const formData = new FormData();
-                //   for (const [name, value] of Object.entries(fields)) {
-                //     formData.append(name, value as any);
-                //   }
-                //   formData.append("file", file);
-                //   try {
-                //     await axios.post(url, formData, {
-                //       headers: {
-                //         "Content-Type": "multipart/form-data",
-                //       },
-                //     });
-                //     socket.emit("message", {
-                //       text: `https://learn-nestjs.s3.ap-northeast-1.amazonaws.com/${fields.key}`,
-                //       type: file.type,
-                //       file_name: file.name,
-                //     });
-                //   } catch (error) {
-                //     console.log(error);
-                //   }
-                // }
-              }}
-            />
-            <SendData />
-          </label>
-          <Form.Item>
-            <Input
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Nhập tin nhắn ..."
-              bordered={false}
-              autoComplete="off"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleSend();
-              }}
-            />
-          </Form.Item>
-          <Button type="primary" onClick={handleSend}>
-            Gửi
-          </Button>
+        <FormStyled className={listFile.length ? "send-file-list" : ""}>
+          <div className="wrapped-file-list">
+            <label htmlFor="icon-button-file">
+              <input
+                id="icon-button-file"
+                type="file"
+                multiple
+                style={{ display: "none" }}
+                onChange={async (e) => {
+                  const files = e.target.files;
+                  if (files) {
+                    const newFiles = Array.from(files).map((file) => ({
+                      id: uuidv4(),
+                      file: file,
+                      type: file.type,
+                      file_name: file.name,
+                    }));
+                    setListFile([...listFile, ...newFiles]);
+                  }
+                }}
+                onClick={(event) => {
+                  (event.target as HTMLInputElement).value = "";
+                }}
+              />
+              <SendData className="icon-file" />
+            </label>
+            {listFile.length > 0 && (
+              <PreviewFile listFile={listFile} setListFile={setListFile} />
+            )}
+          </div>
+          <div className="send-message">
+            <Form.Item>
+              <Input
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Nhập tin nhắn ..."
+                bordered={false}
+                autoComplete="off"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSend();
+                }}
+              />
+            </Form.Item>
+            <Button type="primary" onClick={handleSend}>
+              Gửi
+            </Button>
+          </div>
         </FormStyled>
       </ContentStyled>
     </WrapperStyled>
