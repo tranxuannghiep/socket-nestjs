@@ -1,9 +1,9 @@
 import { PlusSquareOutlined } from "@ant-design/icons";
-import { Button, Collapse, Typography } from "antd";
+import { Button, Collapse } from "antd";
 import axios from "axios";
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
+import { RoomDetail } from "./RoomDetail";
 
 const { Panel } = Collapse;
 
@@ -14,7 +14,7 @@ const PanelStyled = styled(Panel)`
       color: white;
     }
     .ant-collapse-content-box {
-      padding: 0 40px;
+      padding: 0 20px;
     }
 
     .add-room {
@@ -24,14 +24,7 @@ const PanelStyled = styled(Panel)`
   }
 `;
 
-const LinkStyled = styled(Typography.Link)`
-  display: block;
-  margin-bottom: 5px;
-  color: #fff;
-`;
-
 export default function RoomList() {
-  const navigate = useNavigate();
   const [listRoom, setListRoom] = useState<any[]>([]);
 
   const getListRoom = useCallback(async () => {
@@ -50,12 +43,7 @@ export default function RoomList() {
     <Collapse ghost defaultActiveKey={["1"]}>
       <PanelStyled header="Danh sách các phòng" key="1">
         {listRoom.map((room) => (
-          <LinkStyled
-            key={room.id}
-            onClick={() => navigate(`/chat/${room.id}`)}
-          >
-            {room.name}
-          </LinkStyled>
+          <RoomDetail key={room.id} room={room} />
         ))}
         <Button type="text" icon={<PlusSquareOutlined />} className="add-room">
           Thêm phòng
