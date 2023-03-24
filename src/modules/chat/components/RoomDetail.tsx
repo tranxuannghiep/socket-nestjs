@@ -57,8 +57,10 @@ const SOCKET_URL = "http://localhost:5000";
 export function RoomDetail({ room }: RoomDetailProps) {
   const navigate = useNavigate();
   const [lastMessage, setLastMessage] = useState("");
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
+    setUnreadCount(room.joinedRooms?.[0]?.unreadCount || 0);
     setLastMessage(room.messages[0]?.text || "");
   }, [room]);
 
@@ -75,14 +77,19 @@ export function RoomDetail({ room }: RoomDetailProps) {
   useEffect(() => {
     if (socket) {
       // server gửi sự kiện newMessage
-      socket.on("newMessage", (message) => {
-        setLastMessage(message.text);
+      socket.on("notifyMessage", (data) => {
+        setUnreadCount(
+          data.unreadCountList.find(
+            (list: any) => list.user?.id === Number(userId)
+          ).unreadCount
+        );
+        setLastMessage(data.lastMessage.text);
       });
     }
 
     return () => {
       if (socket) {
-        socket.off("newMessage");
+        socket.off("notifyMessage");
         socket.disconnect();
       }
     };
@@ -102,14 +109,12 @@ export function RoomDetail({ room }: RoomDetailProps) {
         <Typography.Text className="name-room">{room.name}</Typography.Text>
         <div className="last-message-wrapped">
           <Typography.Text className="last-message unread-message">
-            {room.joinedRooms?.[0]?.user?.id === Number(userId)
+            {room.messages?.[0]?.user?.id === Number(userId)
               ? `You: ${lastMessage}`
-              : `${room.joinedRooms?.[0]?.user?.lastname}: ${lastMessage}`}
+              : `${room.messages?.[0]?.user?.lastname}: ${lastMessage}`}
           </Typography.Text>
           <div className="notify">
-            <span className="unread-count">
-              {room.joinedRooms?.[0]?.unreadCount}
-            </span>
+            <span className="unread-count">{unreadCount}</span>
           </div>
         </div>
       </div>
