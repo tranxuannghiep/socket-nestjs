@@ -180,6 +180,8 @@ export default function ChatWindow() {
       socket.on("newMessage", (message) => {
         setAllMessages((prevMessages) => [...prevMessages, message]);
       });
+
+      socket.emit("connectToRoom");
     }
 
     return () => {
@@ -187,6 +189,7 @@ export default function ChatWindow() {
         socket.off("connect");
         socket.off("allMessages");
         socket.off("newMessage");
+        socket.off("connectToRoom");
         socket.disconnect();
       }
     };
@@ -229,7 +232,7 @@ export default function ChatWindow() {
       }
     }
     setMessage("");
-    setListFile([])
+    setListFile([]);
   };
 
   return (

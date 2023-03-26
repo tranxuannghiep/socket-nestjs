@@ -58,10 +58,16 @@ export function RoomDetail({ room }: RoomDetailProps) {
   const navigate = useNavigate();
   const [lastMessage, setLastMessage] = useState("");
   const [unreadCount, setUnreadCount] = useState(0);
+  const [sender, setSender] = useState("You");
 
   useEffect(() => {
     setUnreadCount(room.joinedRooms?.[0]?.unreadCount || 0);
     setLastMessage(room.messages[0]?.text || "");
+    if (room.messages?.[0]?.user?.id === Number(userId)) {
+      setSender("You");
+    } else {
+      setSender(room.messages?.[0]?.user?.lastname);
+    }
   }, [room]);
 
   const socket = useMemo(() => {
@@ -84,12 +90,20 @@ export function RoomDetail({ room }: RoomDetailProps) {
           ).unreadCount
         );
         setLastMessage(data.lastMessage.text);
+        if (data.lastMessage?.user?.id === Number(userId)) {
+          setSender("You");
+        } else setSender(data.lastMessage?.user?.lastname);
+      });
+
+      socket.on("clearNotify", () => {
+        setUnreadCount(0);
       });
     }
 
     return () => {
       if (socket) {
         socket.off("notifyMessage");
+        socket.off("clearNotify");
         socket.disconnect();
       }
     };
@@ -108,14 +122,17 @@ export function RoomDetail({ room }: RoomDetailProps) {
       <div style={{ flex: 1 }}>
         <Typography.Text className="name-room">{room.name}</Typography.Text>
         <div className="last-message-wrapped">
-          <Typography.Text className="last-message unread-message">
-            {room.messages?.[0]?.user?.id === Number(userId)
-              ? `You: ${lastMessage}`
-              : `${room.messages?.[0]?.user?.lastname}: ${lastMessage}`}
+          <Typography.Text
+            className={`last-message ${unreadCount > 0 && "unread-message"}`}
+          >
+            {`${sender}: ${lastMessage}`}
           </Typography.Text>
-          <div className="notify">
-            <span className="unread-count">{unreadCount}</span>
-          </div>
+
+          {unreadCount > 0 && (
+            <div className="notify">
+              <span className="unread-count">{unreadCount}</span>
+            </div>
+          )}
         </div>
       </div>
     </LinkStyled>
