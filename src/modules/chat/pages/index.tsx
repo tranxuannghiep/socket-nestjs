@@ -1,5 +1,10 @@
 import { Outlet } from "react-router-dom";
+import SocketProvider from "./SocketProvider";
 
 export default function ChatPage() {
-  return <Outlet />;
+  return (
+    <SocketProvider>
+      <Outlet />;
+    </SocketProvider>
+  );
 }

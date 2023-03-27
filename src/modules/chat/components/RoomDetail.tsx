@@ -1,11 +1,12 @@
 import { Typography } from "antd";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
-import io from "socket.io-client";
+import { useSockets } from "../pages/SocketProvider";
 
 export interface RoomDetailProps {
   room: any;
+  dataLastMessage: any;
 }
 
 const LinkStyled = styled(Typography.Link)`
@@ -53,12 +54,13 @@ const LinkStyled = styled(Typography.Link)`
   }
 `;
 const userId = localStorage.getItem("userId") || "";
-const SOCKET_URL = "http://localhost:5000";
-export function RoomDetail({ room }: RoomDetailProps) {
+
+export function RoomDetail({ room, dataLastMessage }: RoomDetailProps) {
   const navigate = useNavigate();
   const [lastMessage, setLastMessage] = useState("");
   const [unreadCount, setUnreadCount] = useState(0);
   const [sender, setSender] = useState("You");
+  const { socket } = useSockets();
 
   useEffect(() => {
     setUnreadCount(room.joinedRooms?.[0]?.unreadCount || 0);
@@ -70,44 +72,31 @@ export function RoomDetail({ room }: RoomDetailProps) {
     }
   }, [room]);
 
-  const socket = useMemo(() => {
-    return io(SOCKET_URL, {
-      transports: ["websocket"],
-      query: {
-        roomId: room.id,
-      },
-      withCredentials: true,
-    });
-  }, [room.id]);
+  useEffect(() => {
+    if (dataLastMessage) {
+      setUnreadCount(
+        dataLastMessage.unreadCountList.find(
+          (list: any) => list.user?.id === Number(userId)
+        ).unreadCount
+      );
+      setLastMessage(dataLastMessage.lastMessage.text);
+      if (dataLastMessage.lastMessage?.user?.id === Number(userId)) {
+        setSender("You");
+      } else setSender(dataLastMessage.lastMessage?.user?.lastname);
+    }
+  }, [dataLastMessage]);
 
   useEffect(() => {
     if (socket) {
-      // server gửi sự kiện newMessage
-      socket.on("notifyMessage", (data) => {
-        setUnreadCount(
-          data.unreadCountList.find(
-            (list: any) => list.user?.id === Number(userId)
-          ).unreadCount
-        );
-        setLastMessage(data.lastMessage.text);
-        if (data.lastMessage?.user?.id === Number(userId)) {
-          setSender("You");
-        } else setSender(data.lastMessage?.user?.lastname);
-      });
-
-      socket.on("clearNotify", () => {
-        setUnreadCount(0);
-      });
+      socket.emit("getNotifyToRoom", room.id);
     }
 
     return () => {
       if (socket) {
-        socket.off("notifyMessage");
-        socket.off("clearNotify");
-        socket.disconnect();
+        socket.emit("leaveToRoom", room.id);
       }
     };
-  }, [socket]);
+  }, [socket, room]);
 
   return (
     <LinkStyled onClick={() => navigate(`/chat/${room.id}`)}>

@@ -24,7 +24,11 @@ const PanelStyled = styled(Panel)`
   }
 `;
 
-export default function RoomList() {
+interface RoomListProps {
+  listNotifyMessage: any;
+}
+
+export default function RoomList({ listNotifyMessage }: RoomListProps) {
   const [listRoom, setListRoom] = useState<any[]>([]);
 
   const getListRoom = useCallback(async () => {
@@ -43,7 +47,11 @@ export default function RoomList() {
     <Collapse ghost defaultActiveKey={["1"]}>
       <PanelStyled header="Danh sách các phòng" key="1">
         {listRoom.map((room) => (
-          <RoomDetail key={room.id} room={room} />
+          <RoomDetail
+            key={room.id}
+            room={room}
+            dataLastMessage={listNotifyMessage[room.id]}
+          />
         ))}
         <Button type="text" icon={<PlusSquareOutlined />} className="add-room">
           Thêm phòng

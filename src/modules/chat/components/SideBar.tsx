@@ -8,12 +8,16 @@ const SideBarStyled = styled.div`
   height: 100vh;
 `;
 
-export default function SideBar() {
+interface SideBarProps {
+  listNotifyMessage: any;
+}
+
+export default function SideBar({ listNotifyMessage }: SideBarProps) {
   return (
     <SideBarStyled>
       <Row>
         <Col span={24}>
-          <RoomList />
+          <RoomList listNotifyMessage={listNotifyMessage} />
         </Col>
       </Row>
     </SideBarStyled>

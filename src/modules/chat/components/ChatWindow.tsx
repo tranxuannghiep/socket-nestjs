@@ -2,19 +2,17 @@ import { PictureOutlined, UserAddOutlined } from "@ant-design/icons";
 import { Avatar, Button, Form, Input, Tooltip } from "antd";
 import axios from "axios";
 import { differenceInMinutes, parseISO } from "date-fns";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
-import io from "socket.io-client";
-import styled from "styled-components";
-import Message, { MessageProps } from "./Message";
-import YourMessage from "./YourMessage";
 import path from "path-browserify";
-import { PreviewFile } from "./PreviewFile";
+import { useEffect, useRef, useState } from "react";
+import { useParams } from "react-router-dom";
+import styled from "styled-components";
 import { v4 as uuidv4 } from "uuid";
+import { useSockets } from "../pages/SocketProvider";
+import Message, { MessageProps } from "./Message";
+import { PreviewFile } from "./PreviewFile";
+import YourMessage from "./YourMessage";
 
 const userId = localStorage.getItem("userId") || "";
-
-const SOCKET_URL = "http://localhost:5000";
 
 const WrapperStyled = styled.div`
   height: 100vh;
@@ -144,20 +142,9 @@ export default function ChatWindow() {
   const [message, setMessage] = useState("");
   const refListMessage = useRef<HTMLDivElement>(null);
   const [allMessages, setAllMessages] = useState<MessageProps[]>([]);
-
   const [listFile, setListFile] = useState<FileInterface[]>([]);
-
   const { roomId } = useParams();
-
-  const socket = useMemo(() => {
-    return io(SOCKET_URL, {
-      transports: ["websocket"],
-      query: {
-        roomId: roomId,
-      },
-      withCredentials: true,
-    });
-  }, [roomId]);
+  const { socket } = useSockets();
 
   useEffect(() => {
     if (refListMessage.current) {
@@ -167,37 +154,30 @@ export default function ChatWindow() {
 
   useEffect(() => {
     if (socket) {
-      socket.on("connect", () => {
-        console.log("Connected to server");
-      });
+      if (roomId) socket.emit("connectToRoom", roomId);
 
-      // server gủi sự kiện getAll message => thường là lúc bắt đầu vào
       socket.on("allMessages", (data) => {
         setAllMessages(data);
       });
 
-      // server gửi sự kiện newMessage
       socket.on("newMessage", (message) => {
         setAllMessages((prevMessages) => [...prevMessages, message]);
       });
-
-      socket.emit("connectToRoom");
     }
 
     return () => {
       if (socket) {
-        socket.off("connect");
         socket.off("allMessages");
         socket.off("newMessage");
-        socket.off("connectToRoom");
-        socket.disconnect();
+        // socket.emit("leaveToRoom", roomId);
       }
     };
-  }, [socket]);
+  }, [socket, roomId]);
 
   const handleSend = async () => {
+    if (!socket) return;
     if (message) {
-      socket.emit("message", { text: message });
+      socket.emit("message", { text: message, roomId });
     }
     if (listFile.length) {
       for (const data of listFile) {
@@ -225,6 +205,7 @@ export default function ChatWindow() {
             text: `https://learn-nestjs.s3.ap-northeast-1.amazonaws.com/${fields.key}`,
             type: data.type,
             file_name: data.file_name,
+            roomId,
           });
         } catch (error) {
           console.log(error);
